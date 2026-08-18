@@ -473,7 +473,7 @@
     </div>
   </div>
 
-  <audio id="bgm" loop preload="auto">
+  <audio id="bgm" loop preload="none">
     <source src="bgm.mp3" type="audio/mpeg">
   </audio>
   <button id="music-toggle" class="music-toggle" title="音乐开关">🎵</button>
@@ -688,11 +688,16 @@ function openEnvelope() {
     envelopeScreen.classList.add('hidden');
     storyScreen.classList.remove('hidden');
 
-    // 等待所有图片预加载完成（页面打开时已在后台下载，这里只是等全部完成）
+    // 渐进式预加载：只等前 5 张（动画开篇）就开播，其余 28 张后台继续下载
     const loadingEl = document.getElementById('loading-overlay');
-    try { await Promise.all(imagePromises); } catch (e) { /* 单张失败不阻塞 */ }
+    try {
+      await Promise.race([
+        Promise.all(imagePromises.slice(0, 5)),
+        new Promise(r => setTimeout(r, 3000)) // 最多等 3 秒，避免无休止等待
+      ]);
+    } catch (e) { /* 单张失败不阻塞 */ }
     loadingEl.classList.add('hide');
-    setTimeout(() => playStory(), 350);
+    setTimeout(() => playStory(), 250);
   }, 1900);
 }
 
