@@ -390,6 +390,35 @@
     0%   { transform: translateX(-100%); }
     100% { transform: translateX(350%); }
   }
+
+  /* ============ 音乐开关 ============ */
+  .music-toggle {
+    position: fixed;
+    top: 14px; right: 14px;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.72);
+    border: none;
+    font-size: 19px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 30;
+    box-shadow: 0 2px 10px rgba(0,0,0,.16);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .5s ease, transform .3s ease;
+  }
+  .music-toggle.show { opacity: 1; pointer-events: auto; }
+  .music-toggle:active { transform: scale(.9); }
+  .music-toggle.playing { animation: music-spin 3s linear infinite; }
+  @keyframes music-spin {
+    0% { box-shadow: 0 2px 10px rgba(0,0,0,.16), 0 0 0 0 rgba(201,106,90,.35); }
+    50% { box-shadow: 0 2px 10px rgba(0,0,0,.16), 0 0 0 8px rgba(201,106,90,0); }
+    100% { box-shadow: 0 2px 10px rgba(0,0,0,.16), 0 0 0 0 rgba(201,106,90,.35); }
+  }
 </style>
 </head>
 <body>
@@ -443,6 +472,11 @@
       <div class="loading-bar"></div>
     </div>
   </div>
+
+  <audio id="bgm" loop preload="auto">
+    <source src="bgm.mp3" type="audio/mpeg">
+  </audio>
+  <button id="music-toggle" class="music-toggle" title="音乐开关">🎵</button>
 
 <script>
 /* ============================================================
@@ -513,9 +547,12 @@ const dotsEl        = document.getElementById('dots');
 const qixiCard      = document.getElementById('qixi-card');
 const surpriseCard  = document.getElementById('surprise-card');
 const replayBtn     = document.getElementById('replay-btn');
+const bgm           = document.getElementById('bgm');
+const musicToggle   = document.getElementById('music-toggle');
 
 let opened = false;
 let timer = null;
+let musicOn = true;
 
 /* ---------- 漂浮爱心 ---------- */
 function spawnHearts(container) {
@@ -615,10 +652,36 @@ function playStory() {
 }
 
 /* ---------- 打开信封 ---------- */
+function startBgm() {
+  if (musicOn && bgm) {
+    bgm.volume = 0.6;
+    bgm.play().catch(() => {});
+    musicToggle.classList.add('playing');
+    musicToggle.textContent = '🎵';
+  }
+}
+function toggleMusic() {
+  if (bgm.paused) {
+    musicOn = true;
+    bgm.play().catch(() => {});
+    musicToggle.classList.add('playing');
+    musicToggle.textContent = '🎵';
+  } else {
+    musicOn = false;
+    bgm.pause();
+    musicToggle.classList.remove('playing');
+    musicToggle.textContent = '🔇';
+  }
+}
+
 function openEnvelope() {
   if (opened) return;
   opened = true;
   envelope.classList.add('opened');
+
+  // 用户点击信封 → 满足自动播放条件，开始播 BGM
+  startBgm();
+  musicToggle.classList.add('show');
 
   // 信封开合 + 信纸升起后，进入故事
   setTimeout(async () => {
@@ -632,6 +695,8 @@ function openEnvelope() {
     setTimeout(() => playStory(), 350);
   }, 1900);
 }
+
+musicToggle.addEventListener('click', toggleMusic);
 
 envelopeScreen.addEventListener('click', openEnvelope);
 envelopeScreen.addEventListener('touchstart', function (e) {
