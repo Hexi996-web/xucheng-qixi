@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>续程 · 我们的故事</title>
+<style>
+  :root {
+    --bg: #f6efe4;
+    --ink: #4a3b32;
+    --ink-soft: #7a6a5c;
+    --accent: #c96a5a;
+    --paper: #fbf7ee;
+    --paper-2: #f0e6d3;
+    --line: #e5d9c4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
+    background: var(--bg);
+    color: var(--ink);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- 通用 ---------- */
+  .screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: opacity 1s ease, visibility 1s ease;
+  }
+  .screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  /* ---------- 第一屏：信封 ---------- */
+  #envelope-screen {
+    background:
+      radial-gradient(120% 90% at 50% -10%, #fdfaf2 0%, rgba(253,250,242,0) 55%),
+      radial-gradient(100% 100% at 50% 120%, #e9dcc4 0%, rgba(233,220,196,0) 50%),
+      var(--bg);
+    cursor: pointer;
+  }
+  .hint {
+    margin-top: 46px;
+    font-size: 15px;
+    letter-spacing: 4px;
+    color: var(--ink-soft);
+    animation: breathe 2.4s ease-in-out infinite;
+    user-select: none;
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: .45; transform: translateY(0); }
+    50% { opacity: 1; transform: translateY(-4px); }
+  }
+
+  .envelope {
+    position: relative;
+    width: min(320px, 78vw);
+    height: min(232px, 56vw);
+    perspective: 1200px;
+    filter: drop-shadow(0 22px 34px rgba(90, 66, 45, .22));
+  }
+  .env-back {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, #f5ecd9, #efe3c8);
+    border-radius: 10px;
+    box-shadow: inset 0 0 0 1px rgba(200, 175, 140, .35);
+  }
+  .env-body {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, #fdf9f0, #f3e9d5);
+    clip-path: polygon(0 26%, 50% 60%, 100% 26%, 100% 100%, 0 100%);
+    border-radius: 0 0 10px 10px;
+  }
+  .env-flap {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, #f3e8d2, #e9dabf);
+    clip-path: polygon(0 0, 100% 0, 50% 60%);
+    transform-origin: 50% 0%;
+    transform: rotateX(0deg);
+    transition: transform .9s cubic-bezier(.6, -.2, .3, 1.15);
+    transform-style: preserve-3d;
+    z-index: 3;
+  }
+  .envelope.opened .env-flap {
+    transform: rotateX(-180deg);
+    z-index: 1;
+  }
+  .env-letter {
+    position: absolute;
+    left: 8%; right: 8%; top: 14%;
+    height: 74%;
+    background: linear-gradient(180deg, #ffffff, #fbf6ec);
+    border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(120, 90, 60, .14);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    z-index: 2;
+    transition: transform 1s cubic-bezier(.5, -.1, .3, 1) .15s;
+    transform: translateY(0);
+  }
+  .envelope.opened .env-letter { transform: translateY(-118%); }
+  .env-letter .title {
+    font-size: clamp(22px, 6vw, 28px);
+    letter-spacing: 6px;
+    color: var(--ink);
+  }
+  .env-letter .sub {
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: var(--ink-soft);
+  }
+  .env-letter .deco {
+    width: 34px; height: 1px;
+    background: var(--accent);
+    opacity: .6;
+  }
+  .env-seal {
+    position: absolute;
+    left: 50%; top: 56%;
+    width: 44px; height: 44px;
+    transform: translate(-50%, -50%);
+    z-index: 4;
+    transition: opacity .3s ease, transform .3s ease;
+  }
+  .envelope.opened .env-seal { opacity: 0; transform: translate(-50%, -50%) scale(.5); }
+  .env-seal .heart {
+    width: 44px; height: 44px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 3px 8px rgba(160, 80, 60, .35), inset 0 -2px 4px rgba(0,0,0,.12);
+  }
+  .env-seal .heart::before {
+    content: "♥";
+    color: #fff;
+    font-size: 18px;
+    line-height: 1;
+    transform: translateY(-1px);
+  }
+
+  /* ---------- 第二屏：故事 ---------- */
+  #story-screen {
+    background: #f6efe4;
+  }
+  .stage {
+    position: absolute; inset: 0;
+    overflow: hidden;
+  }
+  .scene {
+    position: absolute; inset: 0;
+    opacity: 0;
+    z-index: 1;
+    transition: opacity 1.35s ease;
+    overflow: hidden;
+  }
+  .scene.active { opacity: 1; z-index: 2; }
+  .scene-bg {
+    position: absolute; inset: 0;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    will-change: transform;
+  }
+  .scene.active .scene-bg.zoom-in { animation: kb-in var(--dur, 6s) linear forwards; }
+  .scene.active .scene-bg.zoom-out { animation: kb-out var(--dur, 6s) linear forwards; }
+  @keyframes kb-in {
+    from { transform: scale(1.0) translate(0, 0); }
+    to   { transform: scale(1.05) translate(-1%, -0.8%); }
+  }
+  @keyframes kb-out {
+    from { transform: scale(1.05) translate(0, 0); }
+    to   { transform: scale(1.0) translate(0.8%, 0.7%); }
+  }
+  .scene-emoji {
+    position: absolute;
+    inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: clamp(70px, 22vw, 130px);
+    filter: drop-shadow(0 8px 24px rgba(0,0,0,.25));
+    opacity: .92;
+  }
+  .scene-vignette {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(120% 90% at 50% 45%, rgba(0,0,0,0) 62%, rgba(74,59,50,.13) 100%);
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  /* 字幕 */
+  .subtitle {
+    position: absolute;
+    left: 50%;
+    bottom: 11%;
+    transform: translateX(-50%) translateY(8px);
+    max-width: 86vw;
+    text-align: center;
+    color: #fdf9f0;
+    font-size: clamp(17px, 4.6vw, 24px);
+    line-height: 1.75;
+    letter-spacing: 2px;
+    text-shadow: 0 1px 6px rgba(0,0,0,.45);
+    background: rgba(38,30,24,.46);
+    border-radius: 14px;
+    padding: 10px 22px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    transition: opacity .9s ease, transform .9s ease;
+    z-index: 6;
+  }
+  .subtitle.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .subtitle .quote {
+    color: #f2b3a0;
+    opacity: .9;
+    font-size: .72em;
+    margin: 0 2px;
+  }
+
+  /* 进度点 */
+  .dots {
+    position: absolute;
+    left: 50%; bottom: 5.5%;
+    transform: translateX(-50%);
+    display: flex; gap: 8px;
+    z-index: 6;
+  }
+  .dots i {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(74,59,50,.28);
+    transition: all .4s ease;
+  }
+  .dots i.on { background: #4a3b32; transform: scale(1.35); }
+
+  /* 结尾卡片 */
+  #end-card {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 22px;
+    background: rgba(23,19,15,.55);
+    opacity: 0;
+    transition: opacity 1.2s ease;
+    z-index: 7;
+    pointer-events: none;
+  }
+  #end-card.show { opacity: 1; pointer-events: auto; }
+  #end-card .end-title {
+    color: #fdf9f0;
+    font-size: clamp(26px, 7vw, 40px);
+    letter-spacing: 10px;
+    text-shadow: 0 2px 14px rgba(0,0,0,.5);
+  }
+  #end-card .end-sub {
+    color: rgba(253,249,240,.72);
+    font-size: 14px;
+    letter-spacing: 3px;
+  }
+  .replay-btn {
+    margin-top: 8px;
+    padding: 12px 34px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.55);
+    background: rgba(255,255,255,.1);
+    color: #fdf9f0;
+    font-family: inherit;
+    font-size: 15px;
+    letter-spacing: 4px;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: background .3s ease, transform .3s ease;
+  }
+  .replay-btn:hover { background: rgba(255,255,255,.2); transform: translateY(-1px); }
+  .replay-btn:active { transform: scale(.97); }
+
+  /* ============ 七夕 / 惊喜收尾卡 ============ */
+  .msg-card {
+    position: absolute; inset: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 1.2s ease, visibility 1.2s ease;
+    z-index: 8;
+    overflow: hidden;
+  }
+  .msg-card.show { opacity: 1; visibility: visible; }
+  .msg-bg {
+    position: absolute; inset: -2%;
+    background-size: cover;
+    background-position: center;
+    animation: msg-kenburns 7s ease-out forwards;
+  }
+  @keyframes msg-kenburns {
+    from { transform: scale(1.02); }
+    to   { transform: scale(1.12); }
+  }
+  .msg-scrim {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(20,14,10,.12) 0%, rgba(20,14,10,.38) 55%, rgba(20,14,10,.66) 100%);
+  }
+  .msg-content {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    gap: 18px;
+    padding: 0 28px;
+    z-index: 2;
+  }
+  .msg-title {
+    color: #fdf9f0;
+    font-size: clamp(26px, 7.2vw, 44px);
+    letter-spacing: 5px;
+    line-height: 1.55;
+    text-shadow: 0 2px 18px rgba(0,0,0,.55);
+  }
+  .msg-sub {
+    color: rgba(253,249,240,.92);
+    font-size: clamp(16px, 4.6vw, 22px);
+    letter-spacing: 2px;
+    line-height: 1.9;
+    text-shadow: 0 1px 10px rgba(0,0,0,.5);
+  }
+  .hearts {
+    position: absolute; inset: 0;
+    z-index: 1; pointer-events: none;
+    overflow: hidden;
+  }
+  .heart-float {
+    position: absolute;
+    bottom: -46px;
+    font-size: 22px;
+    opacity: 0;
+    animation: rise 6s linear infinite;
+  }
+  @keyframes rise {
+    0%   { transform: translateY(0) scale(.7); opacity: 0; }
+    15%  { opacity: .9; }
+    100% { transform: translateY(-112vh) scale(1.15) rotate(16deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ============ 第一屏：信封 ============ -->
+  <div id="envelope-screen" class="screen">
+    <div class="envelope" id="envelope">
+      <div class="env-back"></div>
+      <div class="env-letter">
+        <div class="title">续程</div>
+        <div class="deco"></div>
+        <div class="sub">七夕 · 徐程 · 我们的故事</div>
+      </div>
+      <div class="env-body"></div>
+      <div class="env-flap"></div>
+      <div class="env-seal"><div class="heart"></div></div>
+    </div>
+    <div class="hint">点 击 打 开</div>
+  </div>
+
+  <!-- ============ 第二屏：故事 ============ -->
+  <div id="story-screen" class="screen hidden">
+    <div class="stage" id="stage"></div>
+    <div class="scene-vignette"></div>
+    <div class="subtitle" id="subtitle"></div>
+    <div class="dots" id="dots"></div>
+
+    <div id="qixi-card" class="msg-card">
+      <div class="msg-bg" style="background-image:url('qixi_card.png')"></div>
+      <div class="msg-scrim"></div>
+      <div class="hearts"></div>
+      <div class="msg-content">
+        <div class="msg-title">徐宝宝，七夕快乐！</div>
+        <div class="msg-sub">—— 永远爱你的小程</div>
+      </div>
+    </div>
+
+    <div id="surprise-card" class="msg-card">
+      <div class="msg-bg" style="background-image:url('surprise_card.png')"></div>
+      <div class="msg-scrim"></div>
+      <div class="hearts"></div>
+      <div class="msg-content">
+        <div class="msg-title">请开门！</div>
+        <div class="msg-sub">你的美丽鲜花已送达哦！<br>哥要天天好心情，天天想我哦~</div>
+        <button class="replay-btn" id="replay-btn">再看一遍</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ============================================================
+ *  故事数据 —— 把这里替换成你的真实内容即可
+ *  每张图一个场景：
+ *    sub  : 该图字幕
+ *    img  : 卡通图地址（本地文件或 URL），留空则用 bg 占位背景
+ *    emoji: 占位表情（替换真实图片后删除该字段即可）
+ *    bg   : 占位背景色
+ *    d    : 该场景展示时长（毫秒）
+ * ============================================================ */
+const SCENES = [
+  { img: "anime_scene_01.png", sub: "每一个清晨，从你身边醒来。", d: 4400 },
+  { img: "anime_scene_02.png", sub: "一起刷牙，开始新的一天。", d: 4400 },
+  { img: "anime_scene_03.png", sub: "拿着面包，一起出门。", d: 4400 },
+  { img: "anime_scene_04.png", sub: "在天虹路口，我们说再见。", d: 4400 },
+  { img: "anime_scene_05.png", sub: "你去图书馆，我去坐地铁。", d: 4400 },
+  { img: "anime_scene_06.png", sub: "各自努力，各自想念。", d: 4400 },
+  { img: "anime_scene_07.png", sub: "白天的思念，藏在消息里。", d: 4400 },
+  { img: "anime_scene_08.png", sub: "傍晚六点，我在等你。", d: 4400 },
+  { img: "anime_scene_09.png", sub: "一起回家，夕阳正好。", d: 4400 },
+  { img: "anime_scene_10.png", sub: "你做饭，我捣乱。", d: 4400 },
+  { img: "anime_scene_11.png", sub: "一起吃晚饭，最是安心。", d: 4400 },
+  { img: "anime_scene_12.png", sub: "看会儿综艺，然后晚安。", d: 4600 },
+  { img: "card_01.png", sub: "故事从云端开始。", d: 4800 },
+  { img: "card_02.png", sub: "草地上，风很轻，日子很慢。", d: 4800 },
+  { img: "card_03.png", sub: "靠在一起，就是最舒服的距离。", d: 4800 },
+  { img: "card_04.png", sub: "连你点餐的背影，都想记下来。", d: 4800 },
+  { img: "card_05.png", sub: "坐在后座，跟你去看世界。", d: 4800 },
+  { img: "card_06.png", sub: "溪水凉凉的，心里暖暖的。", d: 4800 },
+  { img: "card_07.png", sub: "一碗面，分着吃才香。", d: 4800 },
+  { img: "card_08.png", sub: "海风把心事都吹散了。", d: 4800 },
+  { img: "card_09.png", sub: "和你在一起，天天是晴天。", d: 4800 },
+  { img: "card_10.png", sub: "脚尖碰脚尖，水里有我们的倒影。", d: 4800 },
+  { img: "card_11.png", sub: "脚下的路，一起慢慢走。", d: 4800 },
+  { img: "card_12.png", sub: "比个耶，记住此刻的我们。", d: 4800 },
+  { img: "card_13.png", sub: "出发前的自拍，总是最开心。", d: 4800 },
+  { img: "card_14.png", sub: "为你倒杯茶，温温柔柔。", d: 4800 },
+  { img: "card_15.png", sub: "赖床看手机，也是幸福的样子。", d: 4800 },
+  { img: "card_16.png", sub: "火锅咕嘟咕嘟，热气腾腾的日常。", d: 4800 },
+  { img: "card_17.png", sub: "夜里开车，我坐在副驾。", d: 4800 },
+  { img: "card_18.png", sub: "牵着你的手，就什么都不怕。", d: 4800 },
+  { img: "card_19.png", sub: "车还在，故事未完，我们续程。", d: 4800 },
+];
+
+/* ---------- 元素 ---------- */
+const envelopeScreen = document.getElementById('envelope-screen');
+const storyScreen   = document.getElementById('story-screen');
+const envelope      = document.getElementById('envelope');
+const stage         = document.getElementById('stage');
+const subtitleEl    = document.getElementById('subtitle');
+const dotsEl        = document.getElementById('dots');
+const qixiCard      = document.getElementById('qixi-card');
+const surpriseCard  = document.getElementById('surprise-card');
+const replayBtn     = document.getElementById('replay-btn');
+
+let opened = false;
+let timer = null;
+
+/* ---------- 漂浮爱心 ---------- */
+function spawnHearts(container) {
+  if (!container) return;
+  container.innerHTML = '';
+  const safe = ['❤', '💛', '💖', '💗', '🩵', '💜'];
+  const n = 10;
+  for (let k = 0; k < n; k++) {
+    const h = document.createElement('span');
+    h.className = 'heart-float';
+    h.textContent = safe[Math.floor(Math.random() * safe.length)];
+    h.style.left = Math.random() * 100 + '%';
+    h.style.fontSize = (16 + Math.random() * 22) + 'px';
+    h.style.animationDelay = (Math.random() * 5) + 's';
+    h.style.animationDuration = (5 + Math.random() * 3) + 's';
+    container.appendChild(h);
+  }
+}
+
+/* ---------- 构建场景 DOM ---------- */
+SCENES.forEach((s, i) => {
+  const sc = document.createElement('div');
+  sc.className = 'scene';
+  const bg = document.createElement('div');
+  bg.className = 'scene-bg ' + (i % 2 === 0 ? 'zoom-in' : 'zoom-out');
+  if (s.img) {
+    bg.style.backgroundImage = "url('" + s.img + "')";
+  } else if (s.bg) {
+    bg.style.background = s.bg;
+  }
+  sc.appendChild(bg);
+  if (s.emoji) {
+    const e = document.createElement('div');
+    e.className = 'scene-emoji';
+    e.textContent = s.emoji;
+    sc.appendChild(e);
+  }
+  stage.appendChild(sc);
+
+  const dot = document.createElement('i');
+  dotsEl.appendChild(dot);
+});
+
+const sceneEls = Array.from(stage.children);
+const dotEls   = Array.from(dotsEl.children);
+
+/* ---------- 播放控制 ---------- */
+function showScene(i) {
+  sceneEls.forEach((el, idx) => el.classList.toggle('active', idx === i));
+  dotEls.forEach((el, idx) => el.classList.toggle('on', idx === i));
+  const s = SCENES[i];
+  sceneEls[i].querySelector('.scene-bg').style.setProperty('--dur', s.d + 'ms');
+  setSubtitle(s.sub);
+}
+
+function setSubtitle(text) {
+  if (text && text.trim()) {
+    subtitleEl.innerHTML = '<span class="quote">「</span>' + text + '<span class="quote">」</span>';
+    subtitleEl.classList.add('show');
+  } else {
+    subtitleEl.innerHTML = '';
+    subtitleEl.classList.remove('show');
+  }
+}
+
+function clearSubtitle() {
+  subtitleEl.classList.remove('show');
+}
+
+function playStory() {
+  let i = 0;
+  showScene(0);
+
+  function next() {
+    const d = SCENES[i].d;
+    // 本场景即将结束时淡出字幕
+    timer = setTimeout(() => clearSubtitle(), d - 1100);
+    // 切换下一场景
+    timer = setTimeout(() => {
+      i++;
+      if (i < SCENES.length) {
+        showScene(i);
+        next();
+      } else {
+        // 照片播完 → 七夕祝福卡 → 惊喜卡
+        qixiCard.classList.add('show');
+        spawnHearts(qixiCard.querySelector('.hearts'));
+        timer = setTimeout(() => {
+          qixiCard.classList.remove('show');
+          surpriseCard.classList.add('show');
+          spawnHearts(surpriseCard.querySelector('.hearts'));
+        }, 6500);
+      }
+    }, d);
+  }
+  next();
+}
+
+/* ---------- 打开信封 ---------- */
+function openEnvelope() {
+  if (opened) return;
+  opened = true;
+  envelope.classList.add('opened');
+
+  // 信封开合 + 信纸升起后，进入故事
+  setTimeout(() => {
+    envelopeScreen.classList.add('hidden');
+    storyScreen.classList.remove('hidden');
+    playStory();
+  }, 1900);
+}
+
+envelopeScreen.addEventListener('click', openEnvelope);
+envelopeScreen.addEventListener('touchstart', function (e) {
+  if (e.target.closest('#envelope-screen')) openEnvelope();
+}, { passive: true });
+
+/* ---------- 重播 ---------- */
+replayBtn.addEventListener('click', function () {
+  surpriseCard.classList.remove('show');
+  qixiCard.classList.remove('show');
+  clearTimeout(timer);
+  playStory();
+});
+
+/* 键盘空格也可打开/重播 */
+document.addEventListener('keydown', function (e) {
+  if (e.code === 'Space' || e.code === 'Enter') {
+    e.preventDefault();
+    if (!opened) openEnvelope();
+    else if (surpriseCard.classList.contains('show')) {
+      surpriseCard.classList.remove('show');
+      qixiCard.classList.remove('show');
+      clearTimeout(timer);
+      playStory();
+    }
+  }
+});
+</script>
+</body>
+</html>
